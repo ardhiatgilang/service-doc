@@ -1,6 +1,6 @@
 -- Data contoh (demo) — jalankan setelah schema.sql
--- Foto memakai URL placeholder (picsum.photos) supaya progress bar & thumbnail
--- langsung terisi tanpa perlu upload manual dulu.
+-- Foto memakai URL placeholder (picsum.photos) supaya jumlah foto langsung
+-- terisi tanpa perlu upload manual dulu. Maks 20 foto per project.
 
 insert into technicians (nip, name) values
   ('T-00123', 'Budi Santoso'),
@@ -21,46 +21,17 @@ union all
 select 'PRJ-00127', 'PT MNO', 'Jakarta', 'Servis unit chiller lantai 2', id, '2026-08-30'::date, 'aktif' from technicians where nip = 'T-00123'
 on conflict (kode_project) do nothing;
 
-insert into project_categories (project_id, category, required_count, sort_order)
-select p.id, c.category, c.required_count, c.sort_order
-from projects p
-cross join (values
-  ('before_service', 2, 1),
-  ('nameplate', 1, 2),
-  ('during_service', 2, 3),
-  ('after_service', 2, 4),
-  ('sparepart', null, 5)
-) as c(category, required_count, sort_order)
-on conflict (project_id, category) do nothing;
-
-insert into photos (project_id, category, file_path, uploaded_by, uploaded_at)
-select p.id, v.category, v.file_path, p.technician_id, now()
+insert into photos (project_id, file_path, uploaded_by, uploaded_at)
+select p.id,
+       'https://picsum.photos/seed/' || p.kode_project || '-' || g || '/600/800',
+       p.technician_id,
+       now() - (g || ' minutes')::interval
 from projects p
 join (values
-  ('PRJ-00123', 'before_service', 'https://picsum.photos/seed/prj123-bs-1/600/800'),
-  ('PRJ-00123', 'before_service', 'https://picsum.photos/seed/prj123-bs-2/600/800'),
-  ('PRJ-00123', 'nameplate', 'https://picsum.photos/seed/prj123-np-1/600/800'),
-  ('PRJ-00123', 'during_service', 'https://picsum.photos/seed/prj123-ds-1/600/800'),
-  ('PRJ-00123', 'during_service', 'https://picsum.photos/seed/prj123-ds-2/600/800'),
-
-  ('PRJ-00125', 'before_service', 'https://picsum.photos/seed/prj125-bs-1/600/800'),
-  ('PRJ-00125', 'before_service', 'https://picsum.photos/seed/prj125-bs-2/600/800'),
-  ('PRJ-00125', 'nameplate', 'https://picsum.photos/seed/prj125-np-1/600/800'),
-  ('PRJ-00125', 'during_service', 'https://picsum.photos/seed/prj125-ds-1/600/800'),
-  ('PRJ-00125', 'during_service', 'https://picsum.photos/seed/prj125-ds-2/600/800'),
-  ('PRJ-00125', 'after_service', 'https://picsum.photos/seed/prj125-as-1/600/800'),
-  ('PRJ-00125', 'after_service', 'https://picsum.photos/seed/prj125-as-2/600/800'),
-  ('PRJ-00125', 'sparepart', 'https://picsum.photos/seed/prj125-sp-1/600/800'),
-
-  ('PRJ-00126', 'before_service', 'https://picsum.photos/seed/prj126-bs-1/600/800'),
-  ('PRJ-00126', 'before_service', 'https://picsum.photos/seed/prj126-bs-2/600/800'),
-  ('PRJ-00126', 'nameplate', 'https://picsum.photos/seed/prj126-np-1/600/800'),
-  ('PRJ-00126', 'during_service', 'https://picsum.photos/seed/prj126-ds-1/600/800'),
-  ('PRJ-00126', 'during_service', 'https://picsum.photos/seed/prj126-ds-2/600/800'),
-  ('PRJ-00126', 'after_service', 'https://picsum.photos/seed/prj126-as-1/600/800'),
-  ('PRJ-00126', 'after_service', 'https://picsum.photos/seed/prj126-as-2/600/800'),
-
-  ('PRJ-00127', 'before_service', 'https://picsum.photos/seed/prj127-bs-1/600/800'),
-  ('PRJ-00127', 'before_service', 'https://picsum.photos/seed/prj127-bs-2/600/800'),
-  ('PRJ-00127', 'nameplate', 'https://picsum.photos/seed/prj127-np-1/600/800')
-) as v(kode_project, category, file_path) on v.kode_project = p.kode_project;
+  ('PRJ-00123', 5),
+  ('PRJ-00124', 0),
+  ('PRJ-00125', 20),
+  ('PRJ-00126', 14),
+  ('PRJ-00127', 8)
+) as v(kode_project, photo_count) on v.kode_project = p.kode_project
+cross join lateral generate_series(1, v.photo_count) as g;

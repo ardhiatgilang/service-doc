@@ -1,13 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase";
-import type {
-  Technician,
-  Project,
-  ProjectCategory,
-  Photo,
-  ProjectWithProgress,
-  CategoryProgress,
-} from "./types";
+import { MAX_PHOTOS_PER_PROJECT } from "./constants";
+import type { Technician, Project, Photo, ProjectWithStats } from "./types";
 
 export async function getTechnicianByNip(nip: string): Promise<Technician | null> {
   const { data, error } = await supabaseAdmin
@@ -47,56 +41,36 @@ export async function getAdminByUsername(
   return data;
 }
 
-function buildProgress(categories: ProjectCategory[], photos: Photo[]) {
-  const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
-  const result: CategoryProgress[] = sorted.map((cat) => {
-    const uploadedCount = photos.filter((p) => p.category === cat.category).length;
-    const complete =
-      cat.required_count == null ? uploadedCount >= 1 : uploadedCount >= cat.required_count;
-    return {
-      category: cat.category,
-      requiredCount: cat.required_count,
-      uploadedCount,
-      complete,
-    };
-  });
-  const completedCategories = result.filter((c) => c.complete).length;
-  const totalCategories = result.length;
-  const progressPercent =
-    totalCategories === 0 ? 0 : Math.round((completedCategories / totalCategories) * 100);
-  return { categories: result, completedCategories, totalCategories, progressPercent };
-}
-
-async function attachProgress(
+async function attachPhotoCounts(
   projects: Project[],
   technicians: Map<string, Technician>
-): Promise<ProjectWithProgress[]> {
+): Promise<ProjectWithStats[]> {
   if (projects.length === 0) return [];
   const projectIds = projects.map((p) => p.id);
 
-  const [{ data: allCategories, error: catErr }, { data: allPhotos, error: photoErr }] =
-    await Promise.all([
-      supabaseAdmin.from("project_categories").select("*").in("project_id", projectIds),
-      supabaseAdmin.from("photos").select("*").in("project_id", projectIds),
-    ]);
-  if (catErr) throw catErr;
-  if (photoErr) throw photoErr;
+  const { data: photos, error } = await supabaseAdmin
+    .from("photos")
+    .select("project_id")
+    .in("project_id", projectIds);
+  if (error) throw error;
+
+  const counts = new Map<string, number>();
+  for (const photo of photos ?? []) {
+    counts.set(photo.project_id, (counts.get(photo.project_id) ?? 0) + 1);
+  }
 
   return projects.map((project) => {
-    const categories = (allCategories ?? []).filter((c) => c.project_id === project.id);
-    const photos = (allPhotos ?? []).filter((p) => p.project_id === project.id);
-    const progress = buildProgress(categories, photos);
     const technician = technicians.get(project.technician_id);
     if (!technician) {
       throw new Error(`Teknisi untuk project ${project.kode_project} tidak ditemukan`);
     }
-    return { ...project, technician, ...progress };
+    return { ...project, technician, photoCount: counts.get(project.id) ?? 0 };
   });
 }
 
 export async function getProjectsForTechnician(
   technicianId: string
-): Promise<ProjectWithProgress[]> {
+): Promise<ProjectWithStats[]> {
   const { data: projects, error } = await supabaseAdmin
     .from("projects")
     .select("*")
@@ -106,12 +80,10 @@ export async function getProjectsForTechnician(
   const technician = await getTechnicianById(technicianId);
   if (!technician) return [];
   const map = new Map([[technician.id, technician]]);
-  return attachProgress(projects ?? [], map);
+  return attachPhotoCounts(projects ?? [], map);
 }
 
-export async function getProjectWithProgress(
-  projectId: string
-): Promise<ProjectWithProgress | null> {
+export async function getProjectWithStats(projectId: string): Promise<ProjectWithStats | null> {
   const { data: project, error } = await supabaseAdmin
     .from("projects")
     .select("*")
@@ -122,32 +94,18 @@ export async function getProjectWithProgress(
   const technician = await getTechnicianById(project.technician_id);
   if (!technician) return null;
   const map = new Map([[technician.id, technician]]);
-  const [withProgress] = await attachProgress([project], map);
-  return withProgress;
+  const [withStats] = await attachPhotoCounts([project], map);
+  return withStats;
 }
 
-export async function getAllProjectsWithProgress(): Promise<ProjectWithProgress[]> {
+export async function getAllProjectsWithStats(): Promise<ProjectWithStats[]> {
   const [{ data: projects, error }, technicians] = await Promise.all([
     supabaseAdmin.from("projects").select("*").order("tanggal", { ascending: false }),
     getAllTechnicians(),
   ]);
   if (error) throw error;
   const map = new Map(technicians.map((t) => [t.id, t]));
-  return attachProgress(projects ?? [], map);
-}
-
-export async function getPhotosForProjectCategory(
-  projectId: string,
-  category: string
-): Promise<Photo[]> {
-  const { data, error } = await supabaseAdmin
-    .from("photos")
-    .select("*")
-    .eq("project_id", projectId)
-    .eq("category", category)
-    .order("uploaded_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return attachPhotoCounts(projects ?? [], map);
 }
 
 export async function getPhotosForProject(projectId: string): Promise<Photo[]> {
@@ -171,7 +129,7 @@ export async function getRecentPhotos(limit = 30): Promise<Photo[]> {
 }
 
 export async function insertPhotos(
-  rows: { project_id: string; category: string; file_path: string; uploaded_by: string }[]
+  rows: { project_id: string; file_path: string; uploaded_by: string }[]
 ): Promise<Photo[]> {
   const { data, error } = await supabaseAdmin.from("photos").insert(rows).select();
   if (error) throw error;
@@ -191,13 +149,15 @@ export type DashboardStats = {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const [projects, technicians] = await Promise.all([
-    getAllProjectsWithProgress(),
+    getAllProjectsWithStats(),
     getAllTechnicians(),
   ]);
 
   const activeProjects = projects.filter((p) => p.status === "aktif").length;
   const doneProjects = projects.filter((p) => p.status === "selesai").length;
-  const incompleteProjects = projects.filter((p) => p.progressPercent < 100).length;
+  const incompleteProjects = projects.filter(
+    (p) => p.photoCount < MAX_PHOTOS_PER_PROJECT
+  ).length;
   const activeTechnicianIds = new Set(
     projects.filter((p) => p.status === "aktif").map((p) => p.technician_id)
   );

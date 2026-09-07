@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { getDashboardStats, getAllProjectsWithProgress } from "@/lib/data";
+import { getDashboardStats, getAllProjectsWithStats } from "@/lib/data";
 import { StatCard } from "@/components/admin/StatCard";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { ProgressBar } from "@/components/ProgressBar";
 import { formatDateID } from "@/lib/format";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 function FolderIcon() {
   return (
@@ -40,7 +41,7 @@ function WarningIcon() {
 }
 
 export default async function AdminDashboardPage() {
-  const [stats, projects] = await Promise.all([getDashboardStats(), getAllProjectsWithProgress()]);
+  const [stats, projects] = await Promise.all([getDashboardStats(), getAllProjectsWithStats()]);
   const recent = projects.slice(0, 6);
   const photoDiff = stats.photosToday - stats.photosYesterday;
 
@@ -88,7 +89,7 @@ export default async function AdminDashboardPage() {
                 <th className="px-5 py-3 font-medium">Nama Project</th>
                 <th className="px-5 py-3 font-medium">Teknisi</th>
                 <th className="px-5 py-3 font-medium">Tanggal</th>
-                <th className="px-5 py-3 font-medium">Progress</th>
+                <th className="px-5 py-3 font-medium">Foto</th>
                 <th className="px-5 py-3 font-medium">Status</th>
               </tr>
             </thead>
@@ -105,8 +106,13 @@ export default async function AdminDashboardPage() {
                   <td className="px-5 py-3 text-slate-500">{formatDateID(project.tanggal)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <ProgressBar percent={project.progressPercent} className="w-24" />
-                      <span className="text-xs text-slate-500">{project.progressPercent}%</span>
+                      <ProgressBar
+                        percent={(project.photoCount / MAX_PHOTOS_PER_PROJECT) * 100}
+                        className="w-24"
+                      />
+                      <span className="whitespace-nowrap text-xs text-slate-500">
+                        {project.photoCount}/{MAX_PHOTOS_PER_PROJECT}
+                      </span>
                     </div>
                   </td>
                   <td className="px-5 py-3">

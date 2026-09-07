@@ -1,9 +1,9 @@
-import { getAllTechnicians, getAllProjectsWithProgress } from "@/lib/data";
+import { getAllTechnicians, getAllProjectsWithStats } from "@/lib/data";
 
 export default async function AdminTeknisiPage() {
   const [technicians, projects] = await Promise.all([
     getAllTechnicians(),
-    getAllProjectsWithProgress(),
+    getAllProjectsWithStats(),
   ]);
 
   return (

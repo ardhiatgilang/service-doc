@@ -3,26 +3,18 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { formatDateTimeID } from "@/lib/format";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 type Props = {
   projectId: string;
   projectLabel: string;
-  categoryKey: string;
-  categoryLabel: string;
-  requiredCount: number | null;
   alreadyUploaded: number;
 };
 
 type SelectedFile = { file: File; previewUrl: string; id: string };
 
-export function UploadWizard({
-  projectId,
-  projectLabel,
-  categoryKey,
-  categoryLabel,
-  requiredCount,
-  alreadyUploaded,
-}: Props) {
+export function UploadWizard({ projectId, projectLabel, alreadyUploaded }: Props) {
+  const remainingSlots = Math.max(0, MAX_PHOTOS_PER_PROJECT - alreadyUploaded);
   const [selected, setSelected] = useState<SelectedFile[]>([]);
   const [status, setStatus] = useState<"idle" | "uploading" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -30,19 +22,28 @@ export function UploadWizard({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  const targetLabel =
-    requiredCount != null
-      ? `${alreadyUploaded} dari ${requiredCount} foto sudah diupload`
-      : `${alreadyUploaded} foto sudah diupload`;
-
   function addFiles(fileList: FileList | null) {
     if (!fileList) return;
-    const next = Array.from(fileList).map((file) => ({
-      file,
-      previewUrl: URL.createObjectURL(file),
-      id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
-    }));
-    setSelected((prev) => [...prev, ...next]);
+    setSelected((prev) => {
+      const room = remainingSlots - prev.length;
+      if (room <= 0) {
+        setError(`Sudah mencapai batas maksimal ${MAX_PHOTOS_PER_PROJECT} foto per project.`);
+        return prev;
+      }
+      const next = Array.from(fileList)
+        .slice(0, room)
+        .map((file) => ({
+          file,
+          previewUrl: URL.createObjectURL(file),
+          id: `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`,
+        }));
+      if (fileList.length > room) {
+        setError(`Hanya ${room} foto lagi yang bisa ditambahkan (maks ${MAX_PHOTOS_PER_PROJECT} per project).`);
+      } else {
+        setError(null);
+      }
+      return [...prev, ...next];
+    });
   }
 
   function removeFile(id: string) {
@@ -56,7 +57,6 @@ export function UploadWizard({
 
     const formData = new FormData();
     formData.set("projectId", projectId);
-    formData.set("category", categoryKey);
     selected.forEach((s) => formData.append("files", s.file));
 
     try {
@@ -95,7 +95,6 @@ export function UploadWizard({
           <h2 className="mb-3 text-sm font-semibold text-slate-700">Ringkasan</h2>
           <dl className="flex flex-col gap-2 text-sm">
             <Row label="Project" value={projectLabel} />
-            <Row label="Kategori" value={categoryLabel} />
             <Row label="Jumlah Foto" value={`${result.count} Foto`} />
             <Row label="Waktu Upload" value={formatDateTimeID(result.uploadedAt)} />
           </dl>
@@ -129,13 +128,12 @@ export function UploadWizard({
             <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
           </svg>
         </Link>
-        <div>
-          <p className="text-xs font-semibold text-slate-400">{categoryLabel}</p>
-          <h1 className="font-bold text-slate-900">{projectLabel}</h1>
-        </div>
+        <h1 className="font-bold text-slate-900">{projectLabel}</h1>
       </div>
 
-      <p className="text-sm text-slate-500">{targetLabel}</p>
+      <p className="text-sm text-slate-500">
+        {alreadyUploaded}/{MAX_PHOTOS_PER_PROJECT} foto sudah diupload — sisa {remainingSlots} slot
+      </p>
 
       <input
         ref={cameraInputRef}
@@ -164,7 +162,8 @@ export function UploadWizard({
         <button
           type="button"
           onClick={() => cameraInputRef.current?.click()}
-          className="flex flex-col items-center gap-2 text-blue-600"
+          disabled={remainingSlots === 0}
+          className="flex flex-col items-center gap-2 text-blue-600 disabled:opacity-40"
         >
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white">
             <svg
@@ -189,7 +188,8 @@ export function UploadWizard({
         <button
           type="button"
           onClick={() => galleryInputRef.current?.click()}
-          className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+          disabled={remainingSlots === 0}
+          className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50 disabled:opacity-40"
         >
           Pilih dari Galeri
         </button>

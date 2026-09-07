@@ -1,8 +1,9 @@
-import { getAllProjectsWithProgress, getAllTechnicians } from "@/lib/data";
+import { getAllProjectsWithStats, getAllTechnicians } from "@/lib/data";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 export default async function AdminLaporanPage() {
   const [projects, technicians] = await Promise.all([
-    getAllProjectsWithProgress(),
+    getAllProjectsWithStats(),
     getAllTechnicians(),
   ]);
 
@@ -30,7 +31,7 @@ export default async function AdminLaporanPage() {
                 <th className="px-5 py-3 font-medium">Total Project</th>
                 <th className="px-5 py-3 font-medium">Aktif</th>
                 <th className="px-5 py-3 font-medium">Selesai</th>
-                <th className="px-5 py-3 font-medium">Rata-rata Progress</th>
+                <th className="px-5 py-3 font-medium">Total Foto</th>
               </tr>
             </thead>
             <tbody>
@@ -38,16 +39,16 @@ export default async function AdminLaporanPage() {
                 const own = projects.filter((p) => p.technician_id === t.id);
                 const active = own.filter((p) => p.status === "aktif").length;
                 const done = own.filter((p) => p.status === "selesai").length;
-                const avg = own.length
-                  ? Math.round(own.reduce((sum, p) => sum + p.progressPercent, 0) / own.length)
-                  : 0;
+                const totalPhotos = own.reduce((sum, p) => sum + p.photoCount, 0);
                 return (
                   <tr key={t.id} className="border-b border-slate-50 last:border-0">
                     <td className="px-5 py-3 font-medium text-slate-800">{t.name}</td>
                     <td className="px-5 py-3 text-slate-600">{own.length}</td>
                     <td className="px-5 py-3 text-slate-600">{active}</td>
                     <td className="px-5 py-3 text-slate-600">{done}</td>
-                    <td className="px-5 py-3 text-slate-600">{avg}%</td>
+                    <td className="px-5 py-3 text-slate-600">
+                      {totalPhotos} / {own.length * MAX_PHOTOS_PER_PROJECT}
+                    </td>
                   </tr>
                 );
               })}

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProjectWithProgress, getPhotosForProject } from "@/lib/data";
-import { categoryLabel } from "@/lib/categories";
+import { getProjectWithStats, getPhotosForProject } from "@/lib/data";
 import { photoPublicUrl } from "@/lib/supabase";
-import { formatDateID } from "@/lib/format";
+import { formatDateID, formatDateTimeID } from "@/lib/format";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { ProgressBar } from "@/components/ProgressBar";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
@@ -15,19 +16,13 @@ function Info({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatusDot({ complete, required }: { complete: boolean; required: boolean }) {
-  if (complete) return <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />;
-  if (required) return <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400" />;
-  return <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-300" />;
-}
-
 export default async function AdminProjectDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const project = await getProjectWithProgress(id);
+  const project = await getProjectWithStats(id);
   if (!project) notFound();
 
   const photos = await getPhotosForProject(id);
@@ -98,64 +93,45 @@ export default async function AdminProjectDetailPage({
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Kategori Foto</h2>
-            <span className="text-xs font-semibold text-blue-600">{project.progressPercent}%</span>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-700">Dokumentasi Foto</h2>
+            <span className="text-sm font-bold text-blue-600">
+              {project.photoCount}/{MAX_PHOTOS_PER_PROJECT}
+            </span>
           </div>
-          <ul className="flex flex-col gap-3">
-            {project.categories.map((cat) => (
-              <li key={cat.category} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-slate-700">
-                  <StatusDot complete={cat.complete} required={cat.requiredCount != null} />
-                  {categoryLabel(cat.category)}
-                </span>
-                <span className="text-xs text-slate-400">
-                  {cat.requiredCount != null && !cat.complete
-                    ? `${cat.uploadedCount}/${cat.requiredCount}`
-                    : `${cat.uploadedCount}`}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <ProgressBar percent={(project.photoCount / MAX_PHOTOS_PER_PROJECT) * 100} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {project.categories.map((cat) => {
-          const categoryPhotos = photos.filter((p) => p.category === cat.category);
-          return (
-            <div key={cat.category} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="mb-3 text-sm font-semibold text-slate-800">
-                {categoryLabel(cat.category)} ({categoryPhotos.length}
-                {cat.requiredCount != null ? `/${cat.requiredCount}` : ""} Foto)
-              </h3>
-              {categoryPhotos.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400">
-                  Belum ada foto pada kategori ini.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                  {categoryPhotos.map((photo) => (
-                    <a
-                      key={photo.id}
-                      href={photoPublicUrl(photo.file_path)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block overflow-hidden rounded-lg border border-slate-200"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photoPublicUrl(photo.file_path)}
-                        alt=""
-                        className="aspect-square w-full object-cover"
-                      />
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-slate-800">
+          Foto Dokumentasi ({photos.length})
+        </h3>
+        {photos.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-slate-200 py-6 text-center text-sm text-slate-400">
+            Belum ada foto pada project ini.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            {photos.map((photo) => (
+              <a
+                key={photo.id}
+                href={photoPublicUrl(photo.file_path)}
+                target="_blank"
+                rel="noreferrer"
+                className="group block overflow-hidden rounded-lg border border-slate-200"
+                title={formatDateTimeID(photo.uploaded_at)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photoPublicUrl(photo.file_path)}
+                  alt=""
+                  className="aspect-square w-full object-cover transition group-hover:opacity-90"
+                />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

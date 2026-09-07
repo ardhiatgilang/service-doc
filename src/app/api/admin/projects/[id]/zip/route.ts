@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import JSZip from "jszip";
 import { getAdminSession } from "@/lib/session";
-import { getProjectWithProgress, getPhotosForProject } from "@/lib/data";
+import { getProjectWithStats, getPhotosForProject } from "@/lib/data";
 import { supabaseAdmin, PHOTOS_BUCKET } from "@/lib/supabase";
-import { categoryLabel } from "@/lib/categories";
 
 export async function GET(
   _request: NextRequest,
@@ -16,7 +15,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const project = await getProjectWithProgress(id);
+  const project = await getProjectWithStats(id);
   if (!project) {
     return NextResponse.json({ error: "Project tidak ditemukan." }, { status: 404 });
   }
@@ -26,7 +25,6 @@ export async function GET(
   let counter = 1;
 
   for (const photo of photos) {
-    const folder = categoryLabel(photo.category).replace(/\s+/g, "_");
     let bytes: ArrayBuffer | null = null;
     let ext = "jpg";
 
@@ -48,7 +46,7 @@ export async function GET(
     }
 
     if (bytes) {
-      zip.folder(folder)?.file(`${counter}.${ext}`, bytes);
+      zip.file(`${counter}.${ext}`, bytes);
       counter += 1;
     }
   }

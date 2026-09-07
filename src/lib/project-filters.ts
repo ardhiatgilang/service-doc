@@ -1,4 +1,4 @@
-import type { ProjectWithProgress } from "./types";
+import type { ProjectWithStats } from "./types";
 
 export type ProjectFilterParams = {
   q?: string;
@@ -7,9 +7,9 @@ export type ProjectFilterParams = {
 };
 
 export function filterProjects(
-  projects: ProjectWithProgress[],
+  projects: ProjectWithStats[],
   { q, teknisi, status }: ProjectFilterParams
-): ProjectWithProgress[] {
+): ProjectWithStats[] {
   const query = (q ?? "").trim().toLowerCase();
   return projects.filter((p) => {
     if (teknisi && teknisi !== "semua" && p.technician_id !== teknisi) return false;

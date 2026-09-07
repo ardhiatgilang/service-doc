@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { getAllProjectsWithProgress, getAllTechnicians } from "@/lib/data";
+import { getAllProjectsWithStats, getAllTechnicians } from "@/lib/data";
 import { filterProjects } from "@/lib/project-filters";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { ProgressBar } from "@/components/ProgressBar";
 import { formatDateID } from "@/lib/format";
 import { ProjectFilters } from "@/components/admin/ProjectFilters";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 const PAGE_SIZE = 10;
 
@@ -35,7 +36,7 @@ export default async function AdminProjectsPage({
 }) {
   const { q = "", teknisi = "semua", status = "semua", page = "1" } = await searchParams;
   const [projects, technicians] = await Promise.all([
-    getAllProjectsWithProgress(),
+    getAllProjectsWithStats(),
     getAllTechnicians(),
   ]);
   const filtered = filterProjects(projects, { q, teknisi, status });
@@ -78,7 +79,7 @@ export default async function AdminProjectsPage({
                 <th className="px-5 py-3 font-medium">Nama Project</th>
                 <th className="px-5 py-3 font-medium">Teknisi</th>
                 <th className="px-5 py-3 font-medium">Tanggal</th>
-                <th className="px-5 py-3 font-medium">Progress</th>
+                <th className="px-5 py-3 font-medium">Foto</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Aksi</th>
               </tr>
@@ -92,8 +93,13 @@ export default async function AdminProjectsPage({
                   <td className="px-5 py-3 text-slate-500">{formatDateID(project.tanggal)}</td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <ProgressBar percent={project.progressPercent} className="w-24" />
-                      <span className="text-xs text-slate-500">{project.progressPercent}%</span>
+                      <ProgressBar
+                        percent={(project.photoCount / MAX_PHOTOS_PER_PROJECT) * 100}
+                        className="w-24"
+                      />
+                      <span className="whitespace-nowrap text-xs text-slate-500">
+                        {project.photoCount}/{MAX_PHOTOS_PER_PROJECT}
+                      </span>
                     </div>
                   </td>
                   <td className="px-5 py-3">

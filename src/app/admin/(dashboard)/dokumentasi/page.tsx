@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { getRecentPhotos, getAllProjectsWithProgress } from "@/lib/data";
-import { categoryLabel } from "@/lib/categories";
+import { getRecentPhotos, getAllProjectsWithStats } from "@/lib/data";
 import { photoPublicUrl } from "@/lib/supabase";
 import { formatDateTimeID } from "@/lib/format";
 
 export default async function AdminDokumentasiPage() {
   const [photos, projects] = await Promise.all([
     getRecentPhotos(30),
-    getAllProjectsWithProgress(),
+    getAllProjectsWithStats(),
   ]);
   const projectMap = new Map(projects.map((p) => [p.id, p]));
 
@@ -38,7 +37,7 @@ export default async function AdminDokumentasiPage() {
                   {project?.kode_project ?? "-"}
                 </p>
                 <p className="truncate text-[11px] text-slate-400">
-                  {categoryLabel(photo.category)} · {formatDateTimeID(photo.uploaded_at)}
+                  {formatDateTimeID(photo.uploaded_at)}
                 </p>
               </div>
             </Link>

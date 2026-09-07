@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAdminSession } from "@/lib/session";
-import { getAllProjectsWithProgress } from "@/lib/data";
+import { getAllProjectsWithStats } from "@/lib/data";
 import { filterProjects } from "@/lib/project-filters";
 import { formatDateID } from "@/lib/format";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 function escapeCsv(value: string): string {
   if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = request.nextUrl;
-  const projects = await getAllProjectsWithProgress();
+  const projects = await getAllProjectsWithStats();
   const filtered = filterProjects(projects, {
     q: searchParams.get("q") ?? undefined,
     teknisi: searchParams.get("teknisi") ?? undefined,
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     "Teknisi",
     "NIP",
     "Tanggal",
-    "Progress (%)",
+    `Jumlah Foto (maks ${MAX_PHOTOS_PER_PROJECT})`,
     "Status",
   ];
   const rows = filtered.map((p) => [
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
     p.technician.name,
     p.technician.nip,
     formatDateID(p.tanggal),
-    String(p.progressPercent),
+    String(p.photoCount),
     p.status,
   ]);
 

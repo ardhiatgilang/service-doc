@@ -8,7 +8,7 @@ export default async function TeknisiDokumentasiPage() {
   if (!session) redirect("/teknisi/login");
 
   const projects = await getProjectsForTechnician(session.technicianId);
-  const sorted = [...projects].sort((a, b) => b.progressPercent - a.progressPercent);
+  const sorted = [...projects].sort((a, b) => b.photoCount - a.photoCount);
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-6">

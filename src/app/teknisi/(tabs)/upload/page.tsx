@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getTeknisiSession } from "@/lib/session";
 import { getProjectsForTechnician } from "@/lib/data";
 import { ProjectListCard } from "@/components/teknisi/ProjectListCard";
+import { MAX_PHOTOS_PER_PROJECT } from "@/lib/constants";
 
 export default async function TeknisiUploadPage() {
   const session = await getTeknisiSession();
@@ -9,7 +10,7 @@ export default async function TeknisiUploadPage() {
 
   const projects = await getProjectsForTechnician(session.technicianId);
   const needsUpload = projects.filter(
-    (p) => p.status === "aktif" && p.progressPercent < 100
+    (p) => p.status === "aktif" && p.photoCount < MAX_PHOTOS_PER_PROJECT
   );
 
   return (
