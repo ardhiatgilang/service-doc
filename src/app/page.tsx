@@ -2,16 +2,16 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-1 flex-col items-center justify-center gap-10 px-6 py-16">
+    <main className="flex min-h-screen flex-1 flex-col items-center justify-center gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-16">
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 sm:h-16 sm:w-16">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth={1.8}
-            className="h-8 w-8"
+            className="h-7 w-7 sm:h-8 sm:w-8"
           >
             <path
               strokeLinecap="round"
@@ -21,27 +21,36 @@ export default function Home() {
             <circle cx="12" cy="13" r="3.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">Service Doc</h1>
-        <p className="max-w-sm text-sm text-slate-500">
+        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Service Doc</h1>
+        <p className="max-w-xs text-sm text-slate-500 sm:max-w-sm">
           Dokumentasi servis teknisi — upload foto per project, pantau kelengkapan,
           dan kelola semuanya dari satu tempat.
         </p>
       </div>
 
-      <div className="grid w-full max-w-2xl gap-5 sm:grid-cols-2">
+      <div className="grid w-full max-w-sm gap-4 sm:max-w-2xl sm:grid-cols-2 sm:gap-5">
         <Link
           href="/teknisi/login"
-          className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+          className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md sm:p-6"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white sm:h-11 sm:w-11">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className="h-5 w-5 sm:h-6 sm:w-6"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 20c0-3.5 3.5-6 8-6s8 2.5 8 6" />
             </svg>
           </span>
           <div>
-            <h2 className="font-semibold text-slate-900">Masuk sebagai Teknisi</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-900 sm:text-base">
+              Masuk sebagai Teknisi
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Upload dokumentasi foto servis menggunakan NIP.
             </p>
           </div>
@@ -49,16 +58,25 @@ export default function Home() {
 
         <Link
           href="/admin/login"
-          className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+          className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md sm:p-6"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-slate-900 group-hover:text-white sm:h-11 sm:w-11">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              className="h-5 w-5 sm:h-6 sm:w-6"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16M4 12h16M4 19h10" />
             </svg>
           </span>
           <div>
-            <h2 className="font-semibold text-slate-900">Masuk sebagai Admin Support</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-900 sm:text-base">
+              Masuk sebagai Admin Support
+            </h2>
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               Kelola project, pantau progres, dan unduh dokumentasi.
             </p>
           </div>
